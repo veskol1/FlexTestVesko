@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">FlexTestVesko</string>
+    <string name="popular">Popular</string>
+    <string name="select_filter_type">Select filter type</string>
+
+    <string-array name="movie_lists">
+        <item>Popular</item>
+        <item>New Movies</item>
+        <item>Favorites</item>
+    </string-array>
+
+
+    <string name="movie_saved">Movie saved to favorites</string>
+    <string name="movie_removed">Movie removed from favorites</string>
+
+</resources>
