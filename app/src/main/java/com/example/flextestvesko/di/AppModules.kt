@@ -3,6 +3,7 @@ package com.example.flextestvesko.di
 import android.content.Context
 import androidx.room.Room
 import com.example.flextestvesko.api.MovieApi
+import com.example.flextestvesko.connectivity.NetworkConnectivityManager
 import com.example.flextestvesko.repositories.MovieRepository
 import com.example.flextestvesko.room.MovieDao
 import com.example.flextestvesko.room.MovieDatabase
@@ -46,5 +47,11 @@ object AppModules {
         return Room.databaseBuilder(appContext,
             MovieDatabase::class.java, "database name"
         ).build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideConnectivity(@ApplicationContext appContext: Context): NetworkConnectivityManager {
+        return NetworkConnectivityManager(appContext)
     }
 }

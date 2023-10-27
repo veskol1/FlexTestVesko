@@ -1,6 +1,7 @@
 package com.example.flextestvesko.fragments
 
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -54,18 +55,32 @@ class MainFragment : Fragment(), MovieAdapter.MovieClickListener {
                 FAVORITE_MOVIE -> moviesViewModel.updateState(selectedType = ListType.FAVORITES)
             }
         }
-
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         setupRecyclerView()
+
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                moviesViewModel.uiState.collectLatest { state ->
-                    state.movies?.collectLatest {
-                        movieAdapter.submitData(it)
+                movieAdapter.loadStateFlow.collectLatest { loadStates ->
+                    when (loadStates.refresh) {
+                        is LoadState.Loading -> {
+                            binding.progressBar.isVisible = true
+                            binding.errorImage.isVisible = false
+                            binding.recyclerView.isVisible = false
+                        }
+                        is LoadState.Error -> {
+                            binding.progressBar.isVisible = false
+                            binding.errorImage.isVisible = true
+                            binding.recyclerView.isVisible = false
+                        }
+                        else -> {
+                            binding.progressBar.isVisible = false
+                            binding.errorImage.isVisible = false
+                            binding.recyclerView.isVisible = true
+                        }
                     }
                 }
             }
@@ -73,9 +88,10 @@ class MainFragment : Fragment(), MovieAdapter.MovieClickListener {
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                movieAdapter.loadStateFlow.collectLatest { loadStates ->
-                    binding.progressBar.isVisible = loadStates.refresh is LoadState.Loading
-                    binding.errorImage.isVisible = loadStates.refresh is LoadState.Error
+                moviesViewModel.uiState.collectLatest { state ->
+                    state.movies?.collectLatest {
+                        movieAdapter.submitData(it)
+                    }
                 }
             }
         }

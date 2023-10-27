@@ -1,11 +1,14 @@
 package com.example.flextestvesko.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import com.example.flextestvesko.connectivity.ConnectivityObserver
+import com.example.flextestvesko.connectivity.NetworkConnectivityManager
 import com.example.flextestvesko.models.Movie
 import com.example.flextestvesko.repositories.MovieRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,14 +17,29 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MovieViewModel @Inject constructor(private val repository: MovieRepository) : ViewModel() {
-
-    private fun listData(listType: ListType) = Pager(
+class MovieViewModel @Inject constructor(private val connectivityManager: NetworkConnectivityManager ,private val repository: MovieRepository) : ViewModel() {
+    init {
+        Log.d("haha", " on init")
+        connectivityManager.observe().onEach { status ->
+            when (status) {
+                ConnectivityObserver.Status.Available -> {
+                    updateState(uiState.value.listType)
+                }
+                ConnectivityObserver.Status.Lost -> {
+                    updateState(uiState.value.listType)
+                }
+                else -> {}
+            }
+        }.launchIn(viewModelScope)
+    }
+    private fun getMoviesData(listType: ListType) = Pager(
         PagingConfig(pageSize = 20)
     ) {
         if (listType == ListType.FAVORITES) {
@@ -36,7 +54,7 @@ class MovieViewModel @Inject constructor(private val repository: MovieRepository
         MutableStateFlow(
             UiState(
                 listType = ListType.POPULAR,
-                movies = listData(ListType.POPULAR),
+                movies = getMoviesData(ListType.POPULAR),
             )
         )
     var uiState: StateFlow<UiState> = _uiState.asStateFlow()
@@ -57,7 +75,7 @@ class MovieViewModel @Inject constructor(private val repository: MovieRepository
                 _uiState.update { state ->
                     state.copy(
                         listType = ListType.POPULAR,
-                        movies = listData(ListType.POPULAR)
+                        movies = getMoviesData(ListType.POPULAR)
                     )
                 }
             }
@@ -65,7 +83,7 @@ class MovieViewModel @Inject constructor(private val repository: MovieRepository
                 _uiState.update { state ->
                     state.copy(
                         listType = ListType.NEW_MOVIES,
-                        movies = listData(ListType.NEW_MOVIES)
+                        movies = getMoviesData(ListType.NEW_MOVIES)
                     )
                 }
             }
@@ -73,7 +91,7 @@ class MovieViewModel @Inject constructor(private val repository: MovieRepository
                 _uiState.update { state ->
                     state.copy(
                         listType = ListType.FAVORITES,
-                        movies = listData(ListType.FAVORITES)
+                        movies = getMoviesData(ListType.FAVORITES)
                     )
                 }
             }
